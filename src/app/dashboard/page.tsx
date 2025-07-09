@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { UserNav } from "@/components/UserNav";
+import { Button } from "@/components/ui/button";
 
 interface Task {
   id: string;
@@ -25,6 +26,7 @@ export default function DashboardPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   // Debug logging
@@ -37,11 +39,15 @@ export default function DashboardPage() {
   const refreshData = () => {
     setRefreshKey(prevKey => prevKey + 1);
     setIsModalOpen(false); // Close modal after saving
-    setSelectedTask(null);
+    setSelectedTask(null); // Clear selected task
+    setSelectedDate(undefined); // Clear selected date
+    setSelectedTime(undefined); // Clear selected time
   };
 
-  const handleDateClick = (dateStr: string) => {
+  const handleDateClick = (dateStr: string, timeStr?: string) => {
     setSelectedDate(new Date(dateStr));
+    setSelectedTime(timeStr); // Store the time if provided
+    setSelectedTask(null); // Clear any previously selected task
     setIsModalOpen(true);
   };
 
@@ -50,6 +56,8 @@ export default function DashboardPage() {
     if (res.ok) {
       const task = await res.json();
       setSelectedTask(task);
+      setSelectedDate(undefined); // Clear selected date when editing a task
+      setSelectedTime(undefined); // Clear selected time when editing a task
       setIsModalOpen(true);
     }
   };
@@ -84,11 +92,18 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h2>
           <div className="flex items-center space-x-2">
+            <Button onClick={() => {
+              setSelectedTask(null);
+              setSelectedDate(undefined);
+              setSelectedTime(undefined);
+              setIsModalOpen(true);
+            }}>Add Task</Button>
             <TaskModal
               open={isModalOpen}
               setOpen={setIsModalOpen}
               onTaskSaved={refreshData}
               initialDate={selectedDate}
+              initialTime={selectedTime}
               task={selectedTask}
             />
           </div>

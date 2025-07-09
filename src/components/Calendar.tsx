@@ -21,7 +21,7 @@ interface CalendarEvent {
 }
 
 interface CalendarProps {
-  onDateClick: (dateStr: string) => void;
+  onDateClick: (dateStr: string, timeStr?: string) => void;
   onEventClick: (event: { event: { extendedProps: { taskId: string } } }) => void;
 }
 
@@ -213,27 +213,29 @@ export function Calendar({ onDateClick, onEventClick }: CalendarProps) {
         droppable={true}
         eventDrop={handleEventDrop}
         eventClick={onEventClick}
-                 eventContent={(arg) => {
-           const isCompleted = arg.event.extendedProps.status === "COMPLETED";
-           const taskType = arg.event.extendedProps.type;
-           const taskIcon = getTaskTypeIcon(taskType);
-           
-           return (
-             <div className={`fc-event-main-frame ${isCompleted ? "opacity-75" : ""}`}>
-               <div className="fc-event-title-container">
-                 <div className="fc-event-title fc-sticky flex items-center space-x-1">
-                   <span className="text-xs">{taskIcon}</span>
-                   {isCompleted && <span className="text-xs">✓</span>}
-                   <span className={isCompleted ? "line-through" : ""}>
-                     {arg.event.title}
-                   </span>
-                 </div>
-               </div>
-             </div>
-           );
-         }}
+                         eventContent={(arg) => {
+          const isCompleted = arg.event.extendedProps.status === "COMPLETED";
+          const taskType = arg.event.extendedProps.type;
+          const taskIcon = getTaskTypeIcon(taskType);
+          
+          return (
+            <div className={`fc-event-main-frame overflow-hidden max-w-full ${isCompleted ? "opacity-75" : ""}`}>
+              <div className="fc-event-title-container overflow-hidden max-w-full">
+                <div className="fc-event-title fc-sticky flex items-center space-x-1 overflow-hidden max-w-full">
+                  <span className="text-xs flex-shrink-0">{taskIcon}</span>
+                  {isCompleted && <span className="text-xs flex-shrink-0">✓</span>}
+                  <span className={`truncate flex-1 min-w-0 ${isCompleted ? "line-through" : ""}`}>
+                    {arg.event.title}
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        }}
         dateClick={(info) => {
-          onDateClick(info.dateStr);
+          // Extract time from the click if it's in a time view
+          const timeStr = info.date.toTimeString().slice(0, 5); // HH:MM format
+          onDateClick(info.dateStr, timeStr);
         }}
         height="auto"
         dayMaxEvents={3}

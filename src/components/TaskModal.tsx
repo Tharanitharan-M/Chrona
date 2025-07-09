@@ -58,18 +58,21 @@ interface Task {
   completedAt: string | null;
 }
 
-export function TaskModal({ onTaskSaved, open, setOpen, initialDate, task }: {
+export function TaskModal({ onTaskSaved, open, setOpen, initialDate, initialTime, task }: {
   onTaskSaved: () => void;
   open: boolean;
   setOpen: (open: boolean) => void;
   initialDate?: Date;
+  initialTime?: string;
   task?: Task | null;
 }) {
   const { data: session } = useSession();
   // AI auto-schedule state
-  const [aiSubtasks, setAiSubtasks] = useState<string[]>([]);
+  const [aiSubtasks, setAiSubtasks] = useState<Array<{title: string, estimatedDuration: number}>>([]);
   const [aiEstimatedDuration, setAiEstimatedDuration] = useState<number | null>(null);
   const [aiReasoning, setAiReasoning] = useState<string>("");
+  const [aiPriority, setAiPriority] = useState<string>("");
+  const [aiUrgency, setAiUrgency] = useState<string>("");
   
   // Loading and error states
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,9 +107,18 @@ export function TaskModal({ onTaskSaved, open, setOpen, initialDate, task }: {
         status: task.status as "PENDING" | "COMPLETED",
       });
     } else if (initialDate) {
+      const defaultEndTime = initialTime ? 
+        new Date(`2000-01-01T${initialTime}`).getTime() + (60 * 60 * 1000) : // Add 1 hour to start time
+        undefined;
+      const endTimeStr = defaultEndTime ? 
+        new Date(defaultEndTime).toTimeString().slice(0, 5) : 
+        "";
+        
       form.reset({
         ...form.getValues(),
         date: initialDate,
+        startTime: initialTime || "",
+        endTime: endTimeStr,
       });
     }
     // Reset states when modal opens/closes
@@ -115,8 +127,28 @@ export function TaskModal({ onTaskSaved, open, setOpen, initialDate, task }: {
       setAiSubtasks([]);
       setAiEstimatedDuration(null);
       setAiReasoning("");
+      // Clear form when modal closes
+      if (!task) {
+        const defaultEndTime = initialTime ? 
+          new Date(`2000-01-01T${initialTime}`).getTime() + (60 * 60 * 1000) : 
+          undefined;
+        const endTimeStr = defaultEndTime ? 
+          new Date(defaultEndTime).toTimeString().slice(0, 5) : 
+          "";
+          
+        form.reset({
+          title: "",
+          description: "",
+          type: "TASK",
+          startTime: initialTime || "",
+          endTime: endTimeStr,
+          aiAssist: false,
+          date: initialDate || undefined,
+          status: "PENDING",
+        });
+      }
     }
-  }, [task, initialDate, form, open]);
+  }, [task, initialDate, initialTime, form, open]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
@@ -174,7 +206,17 @@ export function TaskModal({ onTaskSaved, open, setOpen, initialDate, task }: {
 
       if (res.ok) {
         console.log("Task saved successfully");
-        form.reset(); // Reset form fields
+        // Reset form to default values
+        form.reset({
+          title: "",
+          description: "",
+          type: "TASK",
+          startTime: "",
+          endTime: "",
+          aiAssist: false,
+          date: undefined,
+          status: "PENDING",
+        }); 
         setOpen(false); // Close the dialog
         onTaskSaved(); // Call the refresh function
       } else {
@@ -217,9 +259,16 @@ export function TaskModal({ onTaskSaved, open, setOpen, initialDate, task }: {
       const data = await res.json();
       console.log("AI Assist Response:", data);
       
-      setAiSubtasks(data.subtasks || []);
-      setAiEstimatedDuration(data.estimatedDuration || null);
+      // Handle both old and new AI response formats
+      const subtasks = Array.isArray(data.subtasks) 
+        ? data.subtasks.map((task: any) => typeof task === 'string' ? task : task.title)
+        : [];
+      
+      setAiSubtasks(subtasks);
+      setAiEstimatedDuration(data.totalEstimatedDuration || data.estimatedDuration || null);
       setAiReasoning(data.reasoning || "");
+      setAiPriority(data.priority || "");
+      setAiUrgency(data.urgency || "");
       
       if (data.suggestedStartTime && data.suggestedEndTime) {
         // Auto-fill the form with AI suggestions
@@ -287,11 +336,13 @@ export function TaskModal({ onTaskSaved, open, setOpen, initialDate, task }: {
       // If there are subtasks, create individual calendar events for each
       if (aiData.subtasks && aiData.subtasks.length > 0) {
         const totalDuration = aiData.estimatedDuration || 60; // Default to 60 minutes if not provided
-        const subtaskDuration = Math.floor(totalDuration / aiData.subtasks.length);
+        const bufferTime = 20; // 20 minutes buffer between subtasks
+        const workingTime = totalDuration - (bufferTime * (aiData.subtasks.length - 1));
+        const subtaskDuration = Math.floor(workingTime / aiData.subtasks.length);
         
-        // Create calendar events for each subtask
+        // Create calendar events for each subtask with proper spacing
         for (let i = 0; i < aiData.subtasks.length; i++) {
-          const subtaskStart = new Date(startDateTime.getTime() + (i * subtaskDuration * 60000));
+          const subtaskStart = new Date(startDateTime.getTime() + (i * (subtaskDuration + bufferTime) * 60000));
           const subtaskEnd = new Date(subtaskStart.getTime() + (subtaskDuration * 60000));
           
           const subtaskRes = await fetch("/api/tasks", {
@@ -411,9 +462,6 @@ export function TaskModal({ onTaskSaved, open, setOpen, initialDate, task }: {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>Add Task</Button>
-      </DialogTrigger>
       <DialogContent className="sm:max-w-[525px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{task ? "Edit Task" : "Add Task"}</DialogTitle>

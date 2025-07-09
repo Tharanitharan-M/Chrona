@@ -93,39 +93,46 @@ export async function POST(req: Request) {
 CONTEXT:
 - Current date/time: ${timeContext.currentDateTime} (${timeContext.timeZone})
 - Today is ${timeContext.currentDay}
-- User's working hours: ${userPreferences?.workingHours || 'not specified'}
-- User's preferred times: ${userPreferences?.preferredTimes || 'not specified'}
+- User's working hours: ${userPreferences?.workingHours || 'not specified (you may ignore if unspecified)'}
+- User's preferred times: ${userPreferences?.preferredTimes || 'not specified (you may ignore if unspecified)'}
 
 TASK TO RESCHEDULE:
 - Title: "${taskToReschedule.title}"
 - Description: "${taskToReschedule.description || 'no description'}"
 - Originally scheduled: ${taskToReschedule.startTime} to ${taskToReschedule.endTime}
 - Type: ${taskToReschedule.type || 'TASK'}
+- Priority: ${taskToReschedule.priority || 'normal'}
+- Urgency: ${taskToReschedule.urgency || 'medium'}
 
 EXISTING SCHEDULE (next 7 days):
 ${calendarEventsString}
 
 INSTRUCTIONS:
 1. Find the best available time slot that doesn't conflict with existing events
-2. Respect the user's working hours and preferences
-3. Consider the task type and urgency
+2. Respect working hours and user preferences. Avoid scheduling outside of 6am–10pm unless explicitly allowed
+3. Consider the task type, priority, and urgency level
 4. Suggest a time that's realistic and achievable
 5. If possible, schedule within the next 2-3 days unless it's a low-priority task
+6. Ensure at least 15-30 minutes buffer before and after other scheduled events
 
-Return ONLY a valid JSON object with these properties:
+OUTPUT FORMAT:
+- Return ONLY a valid JSON object. Do not include any explanations, markdown syntax, or comments outside of the JSON
+- Your output must start with { and end with }. No code fences or markdown formatting
+- Do not wrap the response in any sentences or natural language
+
 {
   "suggestedStartTime": "ISO datetime string",
   "suggestedEndTime": "ISO datetime string",
   "reasoning": "Brief explanation of why this time was chosen"
 }`;
     } else {
-      aiPrompt = `You are an AI task management assistant that helps break down tasks, estimate durations, and schedule them intelligently.
+      aiPrompt = `You are an AI task management assistant that helps analyze, break down, and intelligently schedule complex tasks.
 
 CONTEXT:
 - Current date/time: ${timeContext.currentDateTime} (${timeContext.timeZone})
 - Today is ${timeContext.currentDay}
-- User's working hours: ${userPreferences?.workingHours || 'not specified'}
-- User's preferred times: ${userPreferences?.preferredTimes || 'not specified'}
+- User's working hours: ${userPreferences?.workingHours || 'not specified (you may ignore if unspecified)'}
+- User's preferred times: ${userPreferences?.preferredTimes || 'not specified (you may ignore if unspecified)'}
 
 TASK TO ANALYZE: "${prompt}"
 
@@ -133,20 +140,39 @@ EXISTING SCHEDULE (next 7 days):
 ${calendarEventsString}
 
 INSTRUCTIONS:
-1. Break down the task into 2-5 logical subtasks if it's complex
-2. Estimate realistic duration in minutes (15-480 minutes range)
-3. Find the best available time slot that doesn't conflict with existing events
-4. Respect working hours and user preferences
-5. Consider task urgency and type
-6. Schedule within the next 3-5 days unless urgent
+1. CAREFULLY READ AND UNDERSTAND the task description
+2. Analyze the task's complexity, requirements, scope, and estimated priority/urgency
+3. Break down ONLY complex tasks into 3-6 logical, sequential subtasks
+4. Each subtask should be:
+   - A clear, actionable step with specific deliverable
+   - Independent enough to be completed separately  
+   - Properly spaced with buffer time between steps
+   - Not combined or rushed together
+5. Estimate realistic duration for EACH subtask (15-120 minutes per subtask)
+6. Total duration should account for breaks and context switching between subtasks
+7. Find the best available time slot that doesn't conflict with existing events
+8. Respect working hours and user preferences. Avoid scheduling outside of 6am–10pm unless explicitly allowed
+9. Don't schedule subtasks back-to-back without at least 15–30 minutes break in between
+10. Schedule within the next 3-5 days unless urgent
+11. For simple tasks that don't need breakdown, return fewer subtasks or just the main task
 
-Return ONLY a valid JSON object with these properties:
+OUTPUT FORMAT:
+- Return ONLY a valid JSON object. Do not include any explanations, markdown syntax, or comments outside of the JSON
+- Your output must start with { and end with }. No code fences or markdown formatting
+- Do not wrap the response in any sentences or natural language
+
 {
-  "subtasks": ["subtask 1", "subtask 2", "..."],
-  "estimatedDuration": number_in_minutes,
-  "suggestedStartTime": "ISO datetime string",
+  "subtasks": [
+    { "title": "Clear, actionable subtask 1", "estimatedDuration": 30 },
+    { "title": "Well-spaced subtask 2", "estimatedDuration": 45 },
+    { "title": "Final subtask 3", "estimatedDuration": 30 }
+  ],
+  "totalEstimatedDuration": 135,
+  "suggestedStartTime": "ISO datetime string", 
   "suggestedEndTime": "ISO datetime string",
-  "reasoning": "Brief explanation of the breakdown and scheduling decision"
+  "reasoning": "Detailed explanation of how you understood the task, why you broke it down this way, and your scheduling logic with emphasis on proper spacing and timing",
+  "priority": "high|normal|low",
+  "urgency": "high|medium|low"
 }`;
     }
 
@@ -176,7 +202,7 @@ Return ONLY a valid JSON object with these properties:
         throw new Error('AI response missing required scheduling fields');
       }
     } else {
-      if (!jsonResponse.subtasks || !jsonResponse.estimatedDuration || 
+      if (!jsonResponse.subtasks || !jsonResponse.totalEstimatedDuration || 
           !jsonResponse.suggestedStartTime || !jsonResponse.suggestedEndTime) {
         throw new Error('AI response missing required fields');
       }
@@ -194,11 +220,13 @@ Return ONLY a valid JSON object with these properties:
           reasoning: "Fallback scheduling due to AI error"
         }
       : {
-          subtasks: [prompt],
-          estimatedDuration: 60,
+          subtasks: [{ title: prompt, estimatedDuration: 60 }],
+          totalEstimatedDuration: 60,
           suggestedStartTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           suggestedEndTime: new Date(Date.now() + 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(),
-          reasoning: "Fallback response due to AI error"
+          reasoning: "Fallback response due to AI error",
+          priority: "normal",
+          urgency: "medium"
         };
     
     return NextResponse.json(fallbackResponse);

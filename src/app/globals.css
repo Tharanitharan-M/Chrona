@@ -199,3 +199,62 @@
 .dark .fc-more-link:hover {
   color: rgb(229 231 235); /* gray-200 */
 }
+
+/* Custom text truncation for multiline */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* FullCalendar Event Text Overflow Fix */
+.fc-event {
+  overflow: hidden !important;
+}
+
+.fc-event-title {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  max-width: 100% !important;
+}
+
+.fc-event-main {
+  overflow: hidden !important;
+}
+
+.fc-event-main-frame {
+  overflow: hidden !important;
+  max-width: 100% !important;
+}
+
+.fc-event-title-container {
+  overflow: hidden !important;
+  max-width: 100% !important;
+}
+
+.fc-daygrid-event {
+  overflow: hidden !important;
+  max-width: 100% !important;
+}
+
+.fc-daygrid-event-harness {
+  overflow: hidden !important;
+  max-width: 100% !important;
+}
+
+/* Specific fix for day grid events */
+.fc-daygrid-event .fc-event-title {
+  padding-right: 4px !important;
+  box-sizing: border-box !important;
+}
+
+/* Ensure events don't extend beyond their container */
+.fc-daygrid-day-events {
+  overflow: hidden !important;
+}
+
+.fc-daygrid-day-bottom {
+  overflow: hidden !important;
+}
