@@ -2,8 +2,8 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -11,31 +11,31 @@ generator client {
 }
 
 model User {
-  id            String          @id @default(cuid())
-  name          String?
-  email         String?         @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  tasks         Task[]
+  id             String          @id @default(cuid())
+  name           String?
+  email          String?         @unique
+  emailVerified  DateTime?
+  image          String?
+  accounts       Account[]
+  sessions       Session[]
+  tasks          Task[]
   calendarEvents CalendarEvent[]
-  aiPreferences AIPreferences?
+  aiPreferences  AIPreferences?
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?
-  access_token       String?
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -67,17 +67,17 @@ enum TaskType {
 }
 
 model Task {
-  id                 String   @id @default(cuid())
-  title              String
-  description        String?
-  type               TaskType
+  id                String         @id @default(cuid())
+  title             String
+  description       String?
+  type              TaskType
   estimatedDuration Int?
-  deadline           DateTime?
-  status             String
-  completedAt        DateTime?
-  userId             String
-  user               User     @relation(fields: [userId], references: [id])
-  calendarEvent      CalendarEvent?
+  deadline          DateTime?
+  status            String
+  completedAt       DateTime?
+  userId            String
+  user              User           @relation(fields: [userId], references: [id])
+  calendarEvent     CalendarEvent?
 }
 
 model CalendarEvent {
@@ -91,9 +91,9 @@ model CalendarEvent {
 }
 
 model AIPreferences {
-  id           String @id @default(cuid())
-  workingHours String
+  id             String @id @default(cuid())
+  workingHours   String
   preferredTimes String
-  userId       String @unique
-  user         User   @relation(fields: [userId], references: [id])
+  userId         String @unique
+  user           User   @relation(fields: [userId], references: [id])
 }
