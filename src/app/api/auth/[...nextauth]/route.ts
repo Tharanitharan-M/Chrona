@@ -20,6 +20,7 @@ export const authOptions = {
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async signIn({ user, account, profile }: any) {
+      console.log('Sign-in attempt:', { user: user.email, account: account.provider });
       return true;
     },
   },
@@ -29,7 +30,6 @@ export const authOptions = {
   },
   debug: process.env.NODE_ENV === 'development',
   secret: process.env.NEXTAUTH_SECRET,
-  // Ensure the URL is correctly set for production
   url: process.env.NEXTAUTH_URL || 'http://localhost:3000',
 }
 

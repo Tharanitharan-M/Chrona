@@ -20,13 +20,20 @@ export default function HomePage() {
   const handleSignIn = async () => {
     setIsSigningIn(true);
     try {
+      console.log('Starting Google sign-in...');
       const result = await signIn("google", { 
         callbackUrl: "/dashboard",
-        redirect: true  // Changed to true for production
+        redirect: false  // Changed to false for better error handling
       });
       
+      console.log('Sign-in result:', result);
+      
       if (result?.error) {
+        console.error('Sign-in error:', result.error);
         alert(`Sign-in failed: ${result.error}`);
+      } else if (result?.url) {
+        // Manually redirect if successful
+        window.location.href = result.url;
       }
     } catch (error) {
       console.error("Sign-in error:", error);

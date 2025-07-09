@@ -27,6 +27,7 @@ export default function DashboardPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
+  // Debug logging
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/");
