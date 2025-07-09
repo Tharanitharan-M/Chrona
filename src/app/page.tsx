@@ -22,14 +22,11 @@ export default function HomePage() {
     try {
       const result = await signIn("google", { 
         callbackUrl: "/dashboard",
-        redirect: false 
+        redirect: true  // Changed to true for production
       });
       
       if (result?.error) {
         alert(`Sign-in failed: ${result.error}`);
-      } else if (result?.url) {
-        // Redirect manually if needed
-        window.location.href = result.url;
       }
     } catch (error) {
       console.error("Sign-in error:", error);
@@ -174,7 +171,6 @@ export default function HomePage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
               <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center space-x-3 mb-3">
-                  <div className="h-3 w-3 bg-blue-500 rounded-full"></div>
                   <Users className="h-5 w-5 text-blue-600" />
                   <span className="font-medium text-gray-900 dark:text-white">Meetings</span>
                 </div>
@@ -182,7 +178,6 @@ export default function HomePage() {
               </div>
               <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center space-x-3 mb-3">
-                  <div className="h-3 w-3 bg-red-500 rounded-full"></div>
                   <Clock className="h-5 w-5 text-red-600" />
                   <span className="font-medium text-gray-900 dark:text-white">Deadlines</span>
                 </div>
@@ -190,7 +185,6 @@ export default function HomePage() {
               </div>
               <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center space-x-3 mb-3">
-                  <div className="h-3 w-3 bg-yellow-500 rounded-full"></div>
                   <span className="text-lg">🔔</span>
                   <span className="font-medium text-gray-900 dark:text-white">Reminders</span>
                 </div>
@@ -198,7 +192,6 @@ export default function HomePage() {
               </div>
               <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center space-x-3 mb-3">
-                  <div className="h-3 w-3 bg-purple-500 rounded-full"></div>
                   <span className="text-lg">🎯</span>
                   <span className="font-medium text-gray-900 dark:text-white">Focus Blocks</span>
                 </div>
@@ -206,7 +199,6 @@ export default function HomePage() {
               </div>
               <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center space-x-3 mb-3">
-                  <div className="h-3 w-3 bg-gray-500 rounded-full"></div>
                   <span className="text-lg">📝</span>
                   <span className="font-medium text-gray-900 dark:text-white">General Tasks</span>
                 </div>

@@ -29,6 +29,8 @@ export const authOptions = {
   },
   debug: process.env.NODE_ENV === 'development',
   secret: process.env.NEXTAUTH_SECRET,
+  // Ensure the URL is correctly set for production
+  url: process.env.NEXTAUTH_URL || 'http://localhost:3000',
 }
 
 const handler = NextAuth(authOptions)
