@@ -108,12 +108,13 @@ EXISTING SCHEDULE (next 7 days):
 ${calendarEventsString}
 
 INSTRUCTIONS:
-1. Find the best available time slot that doesn't conflict with existing events
-2. Respect working hours and user preferences. Avoid scheduling outside of 6am–10pm unless explicitly allowed
-3. Consider the task type, priority, and urgency level
-4. Suggest a time that's realistic and achievable
-5. If possible, schedule within the next 2-3 days unless it's a low-priority task
-6. Ensure at least 15-30 minutes buffer before and after other scheduled events
+1. Analyze the task description for any specific requirements, constraints, or dependencies that affect rescheduling
+2. Find the best available time slot that doesn't conflict with existing events
+3. Respect working hours and user preferences. Avoid scheduling outside of 6am–10pm unless explicitly allowed
+4. Consider the task type, priority, and urgency level, plus any details from the description
+5. Suggest a time that's realistic and achievable based on task complexity
+6. If possible, schedule within the next 2-3 days unless it's a low-priority task
+7. Ensure at least 15-30 minutes buffer before and after other scheduled events
 
 OUTPUT FORMAT:
 - Return ONLY a valid JSON object. Do not include any explanations, markdown syntax, or comments outside of the JSON
@@ -123,7 +124,7 @@ OUTPUT FORMAT:
 {
   "suggestedStartTime": "ISO datetime string",
   "suggestedEndTime": "ISO datetime string",
-  "reasoning": "Brief explanation of why this time was chosen"
+  "reasoning": "Brief explanation of why this time was chosen (considering task description details if relevant)"
 }`;
     } else {
       aiPrompt = `You are an AI task management assistant that helps analyze, break down, and intelligently schedule complex tasks.
@@ -140,21 +141,23 @@ EXISTING SCHEDULE (next 7 days):
 ${calendarEventsString}
 
 INSTRUCTIONS:
-1. CAREFULLY READ AND UNDERSTAND the task description
-2. Analyze the task's complexity, requirements, scope, and estimated priority/urgency
-3. Break down ONLY complex tasks into 3-6 logical, sequential subtasks
-4. Each subtask should be:
+1. CAREFULLY READ AND UNDERSTAND the complete task information (both title and any description provided)
+2. If a description is provided, extract key requirements, constraints, deadlines, and specific details that affect task breakdown and scheduling
+3. Use description details to determine the true scope, complexity, and priority/urgency level
+4. Leverage any mentioned context (meetings, dependencies, specific requirements) from the description to create more accurate subtasks
+5. Break down ONLY complex tasks into 3-6 logical, sequential subtasks
+6. Each subtask should be:
    - A clear, actionable step with specific deliverable
    - Independent enough to be completed separately  
    - Properly spaced with buffer time between steps
    - Not combined or rushed together
-5. Estimate realistic duration for EACH subtask (15-120 minutes per subtask)
-6. Total duration should account for breaks and context switching between subtasks
-7. Find the best available time slot that doesn't conflict with existing events
-8. Respect working hours and user preferences. Avoid scheduling outside of 6am–10pm unless explicitly allowed
-9. Don't schedule subtasks back-to-back without at least 15–30 minutes break in between
-10. Schedule within the next 3-5 days unless urgent
-11. For simple tasks that don't need breakdown, return fewer subtasks or just the main task
+7. Estimate realistic duration for EACH subtask (15-120 minutes per subtask)
+8. Total duration should account for breaks and context switching between subtasks
+9. Find the best available time slot that doesn't conflict with existing events
+10. Respect working hours and user preferences. Avoid scheduling outside of 6am–10pm unless explicitly allowed
+11. Don't schedule subtasks back-to-back without at least 15–30 minutes break in between
+12. Schedule within the next 3-5 days unless urgent
+13. For simple tasks that don't need breakdown, return fewer subtasks or just the main task
 
 OUTPUT FORMAT:
 - Return ONLY a valid JSON object. Do not include any explanations, markdown syntax, or comments outside of the JSON
@@ -170,7 +173,7 @@ OUTPUT FORMAT:
   "totalEstimatedDuration": 135,
   "suggestedStartTime": "ISO datetime string", 
   "suggestedEndTime": "ISO datetime string",
-  "reasoning": "Detailed explanation of how you understood the task, why you broke it down this way, and your scheduling logic with emphasis on proper spacing and timing",
+  "reasoning": "Detailed explanation of how you understood the task (including key details from description if provided), why you broke it down this way, and your scheduling logic with emphasis on proper spacing and timing",
   "priority": "high|normal|low",
   "urgency": "high|medium|low"
 }`;

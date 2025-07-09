@@ -235,10 +235,15 @@ export function TaskModal({ onTaskSaved, open, setOpen, initialDate, initialTime
     if (!form.getValues("aiAssist")) return;
     
     const title = form.getValues("title");
+    const description = form.getValues("description") || "";
+    
     if (!title) {
       setError("Please enter a task title first");
       return;
     }
+
+    // Combine title and description for better AI context
+    const fullPrompt = description ? `${title}\n\nDescription: ${description}` : title;
 
     setIsLoadingAI(true);
     setError("");
@@ -249,7 +254,7 @@ export function TaskModal({ onTaskSaved, open, setOpen, initialDate, initialTime
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt: title }),
+        body: JSON.stringify({ prompt: fullPrompt }),
       });
       
       if (!res.ok) {
@@ -283,7 +288,7 @@ export function TaskModal({ onTaskSaved, open, setOpen, initialDate, initialTime
         const currentDescription = form.getValues("description") || "";
         const aiEnhancedDescription = currentDescription + 
           (currentDescription ? "\n\n" : "") + 
-          `AI Analysis:\n${data.reasoning}\n\nSubtasks:\n${data.subtasks.map((task: string, i: number) => `${i + 1}. ${task}`).join('\n')}`;
+          `AI Analysis:\n${data.reasoning}\n\nSubtasks:\n${data.subtasks.map((task: any, i: number) => `${i + 1}. ${task.title || task} (${task.estimatedDuration || '30'}min)`).join('\n')}`;
         
         form.setValue("description", aiEnhancedDescription);
         
@@ -342,8 +347,12 @@ export function TaskModal({ onTaskSaved, open, setOpen, initialDate, initialTime
         
         // Create calendar events for each subtask with proper spacing
         for (let i = 0; i < aiData.subtasks.length; i++) {
-          const subtaskStart = new Date(startDateTime.getTime() + (i * (subtaskDuration + bufferTime) * 60000));
-          const subtaskEnd = new Date(subtaskStart.getTime() + (subtaskDuration * 60000));
+          const subtask = aiData.subtasks[i];
+          const subtaskTitle = subtask.title || subtask;
+          const subtaskDurationMinutes = subtask.estimatedDuration || subtaskDuration;
+          
+          const subtaskStart = new Date(startDateTime.getTime() + (i * (subtaskDurationMinutes + bufferTime) * 60000));
+          const subtaskEnd = new Date(subtaskStart.getTime() + (subtaskDurationMinutes * 60000));
           
           const subtaskRes = await fetch("/api/tasks", {
             method: "POST",
@@ -351,8 +360,8 @@ export function TaskModal({ onTaskSaved, open, setOpen, initialDate, initialTime
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              title: `${values.title} - ${aiData.subtasks[i]}`,
-              description: `Subtask ${i + 1} of ${aiData.subtasks.length}: ${aiData.subtasks[i]}\n\nParent Task: ${values.title}`,
+              title: `${values.title} - ${subtaskTitle}`,
+              description: `Subtask ${i + 1} of ${aiData.subtasks.length}: ${subtaskTitle}\n\nParent Task: ${values.title}\nEstimated Duration: ${subtaskDurationMinutes} minutes`,
               type: "FOCUS_BLOCK", // Use FOCUS_BLOCK for subtasks
               deadline: null,
               startTime: subtaskStart.toISOString(),
@@ -363,7 +372,7 @@ export function TaskModal({ onTaskSaved, open, setOpen, initialDate, initialTime
           });
 
           if (!subtaskRes.ok) {
-            console.warn(`Failed to create subtask ${i + 1}: ${aiData.subtasks[i]}`);
+            console.warn(`Failed to create subtask ${i + 1}: ${subtaskTitle}`);
           }
         }
       }
@@ -655,7 +664,7 @@ export function TaskModal({ onTaskSaved, open, setOpen, initialDate, initialTime
                     <p className="text-sm font-medium text-green-800 mb-1">Task Breakdown:</p>
                     <ul className="list-disc list-inside text-sm text-green-700">
                       {aiSubtasks.map((subtask, index) => (
-                        <li key={index}>{subtask}</li>
+                        <li key={index}>{typeof subtask === 'string' ? subtask : subtask.title || subtask}</li>
                       ))}
                     </ul>
                   </div>
