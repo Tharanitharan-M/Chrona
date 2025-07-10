@@ -7,11 +7,7 @@ import { getServerAuthSession } from '@/lib/auth';
 // Get your API key from https://aistudio.google.com/app/apikey
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
-// GitHub Models OpenAI client
-const githubOpenAI = new OpenAI({
-  apiKey: process.env.GITHUB_TOKEN,
-  baseURL: 'https://models.inference.ai.azure.com',
-});
+// GitHub Models OpenAI client will be created inside the request handler
 
 // Helper function to format current date and time for context
 function getCurrentTimeContext() {
@@ -194,14 +190,40 @@ OUTPUT FORMAT:
     // Use different AI models based on user preference
     if (selectedModel.startsWith('gpt-') || selectedModel.startsWith('o1-')) {
       // Use OpenAI via GitHub Models for GPT models
-      const completion = await githubOpenAI.chat.completions.create({
-        model: selectedModel,
-        messages: [{ role: 'user', content: aiPrompt }],
-        max_tokens: 1000,
-        temperature: 0.7,
-      });
-      
-      text = completion.choices[0].message.content || '';
+      try {
+        if (!process.env.GITHUB_TOKEN) {
+          console.warn('GITHUB_TOKEN not available, falling back to Gemini');
+          throw new Error('GITHUB_TOKEN not available');
+        }
+        
+        const githubOpenAI = new OpenAI({
+          apiKey: process.env.GITHUB_TOKEN,
+          baseURL: 'https://models.inference.ai.azure.com',
+        });
+        
+        const completion = await githubOpenAI.chat.completions.create({
+          model: selectedModel,
+          messages: [{ role: 'user', content: aiPrompt }],
+          max_tokens: 1000,
+          temperature: 0.7,
+        });
+        
+        text = completion.choices[0].message.content || '';
+      } catch (error) {
+        console.warn('OpenAI model failed, falling back to Gemini:', error);
+        // Fallback to Gemini if OpenAI fails
+        const model = genAI.getGenerativeModel({ 
+          model: "gemini-1.5-flash",
+          generationConfig: {
+            maxOutputTokens: 1000,
+            temperature: 0.7,
+          },
+        });
+
+        const result = await model.generateContent(aiPrompt);
+        const response = await result.response;
+        text = response.text();
+      }
     } else {
       // Use Gemini for non-GPT models
       const model = genAI.getGenerativeModel({ 
