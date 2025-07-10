@@ -183,7 +183,7 @@ OUTPUT FORMAT:
     }
 
     // Get the selected model from user preferences
-    const selectedModel = userPreferences?.selectedModel || 'gpt-4o-mini';
+    const selectedModel = userPreferences?.selectedModel || 'gpt-4';
     
     let text: string;
     

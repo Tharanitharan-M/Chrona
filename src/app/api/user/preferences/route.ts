@@ -16,7 +16,7 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(preferences || { workingHours: '', preferredTimes: '', selectedModel: 'gpt-4o-mini' });
+    return NextResponse.json(preferences || { workingHours: '', preferredTimes: '', selectedModel: 'gpt-4' });
   } catch (error) {
     console.error('Failed to fetch preferences:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
         userId: session.user.id,
         workingHours,
         preferredTimes,
-        selectedModel: selectedModel || 'gpt-4o-mini',
+        selectedModel: selectedModel || 'gpt-4',
       },
     });
 
