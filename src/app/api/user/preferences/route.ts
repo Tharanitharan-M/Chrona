@@ -16,7 +16,7 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(preferences || { workingHours: '', preferredTimes: '' });
+    return NextResponse.json(preferences || { workingHours: '', preferredTimes: '', selectedModel: 'gpt-4o-mini' });
   } catch (error) {
     console.error('Failed to fetch preferences:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { workingHours, preferredTimes } = await req.json();
+  const { workingHours, preferredTimes, selectedModel } = await req.json();
 
   try {
     await prisma.aIPreferences.upsert({
@@ -40,11 +40,13 @@ export async function POST(req: Request) {
       update: {
         workingHours,
         preferredTimes,
+        selectedModel,
       },
       create: {
         userId: session.user.id,
         workingHours,
         preferredTimes,
+        selectedModel: selectedModel || 'gpt-4o-mini',
       },
     });
 

@@ -7,12 +7,14 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
 import { useEffect } from "react";
 
 const formSchema = z.object({
   workingHours: z.string().optional(),
   preferredTimes: z.string().optional(),
+  selectedModel: z.string().optional(),
 });
 
 export default function SettingsPage() {
@@ -23,6 +25,7 @@ export default function SettingsPage() {
     defaultValues: {
       workingHours: "",
       preferredTimes: "",
+      selectedModel: "gpt-4o-mini",
     },
   });
 
@@ -106,6 +109,33 @@ export default function SettingsPage() {
                   <FormControl>
                     <Input placeholder="e.g., mornings, afternoons" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="selectedModel"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>AI Model</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select an AI model" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
+                      <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+                      <SelectItem value="gpt-4">GPT-4</SelectItem>
+                      <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
+                      <SelectItem value="o1-mini">O1 Mini</SelectItem>
+                      <SelectItem value="o1-preview">O1 Preview</SelectItem>
+                      <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
+                      <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

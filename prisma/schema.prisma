@@ -94,6 +94,7 @@ model AIPreferences {
   id             String @id @default(cuid())
   workingHours   String
   preferredTimes String
+  selectedModel  String @default("gpt-4o-mini")
   userId         String @unique
   user           User   @relation(fields: [userId], references: [id])
 }
